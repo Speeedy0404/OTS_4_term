@@ -179,6 +179,9 @@ Builder.load_string('''
             pos: 0, 110
             on_press:
                 root.make_it_planar()
+                root.del_info_graph()
+                root.clear_matrix()
+                root.update()
             
         
         BoxLayout:
@@ -862,15 +865,19 @@ class Table(Screen):
             if globals.current_graph == None:
                 self.status.text = 'найдите нужный граф'
                 raise ValueError
-
+            Table.info.clear()
             edges_name = globals.edges_name[globals.current_graph]
             edges_name = edges_name.split(sep=',')
-
+            print('this is edges')
             vertex_name = globals.vertex[globals.current_graph]
             vertex_name = vertex_name.split(sep=',')
 
+            print('this is vertex')
+            print(vertex_name)
+
             globals.Columns = len(edges_name)
             globals.Lines = len(vertex_name)
+            print(globals.Lines)
 
             diameter = 0
             radius = 100
@@ -1238,8 +1245,20 @@ class Table(Screen):
             Table.result = None
             Table.bad_minor = None
 
+            vertex_name = globals.vertex[globals.current_graph]
+            vertex_name = vertex_name.split(sep=',')
+
+            vertex_color = globals.color[globals.current_graph]
+            vertex_color = vertex_color.split(sep=',')
+
+            vertex_text = globals.text[globals.current_graph]
+            vertex_text = vertex_text.split(sep=',')
+
             edges_path = globals.edges_path[globals.current_graph]
             edges_path = edges_path.split(sep=',')
+
+            edges_name = globals.edges_name[globals.current_graph]
+            edges_name = edges_name.split(sep=',')
 
             G = nx.Graph()
             for i in range(1, len(edges_path), 3):
@@ -1252,53 +1271,60 @@ class Table(Screen):
                 self.status.text = 'граф и так планарный '
                 raise ValueError
 
+            for i in range(len(vertex_name)):
+                if Table.bad_minor[0] == vertex_name[i]:
+                    self.delvertex.text = vertex_name[i]
+                    self.del_vertex()
+                    break
+
+            self.status.text = 'граф стал планарным'
+
         except ValueError:
             pass
 
+    def change_text(self):
+        try:
+            if globals.current_graph == None:
+                self.status.text = 'найдите нужный граф'
+                raise ValueError
 
-def change_text(self):
-    try:
-        if globals.current_graph == None:
-            self.status.text = 'найдите нужный граф'
-            raise ValueError
+            bl = True
+            it = None
 
-        bl = True
-        it = None
+            vertex_name = globals.vertex[globals.current_graph]
+            vertex_name = vertex_name.split(sep=',')
 
-        vertex_name = globals.vertex[globals.current_graph]
-        vertex_name = vertex_name.split(sep=',')
+            vertex_text = globals.text[globals.current_graph]
+            vertex_text = vertex_text.split(sep=',')
 
-        vertex_text = globals.text[globals.current_graph]
-        vertex_text = vertex_text.split(sep=',')
+            if self.textvertex.text == '':
+                self.status.text = 'введите имя вершины'
+                raise ValueError
 
-        if self.textvertex.text == '':
-            self.status.text = 'введите имя вершины'
-            raise ValueError
+            if re.search(r'[^a-zA-Z0-9_.+-]', self.textvertex.text):
+                self.status.text = 'используйте латиницу'
+                raise ValueError
 
-        if re.search(r'[^a-zA-Z0-9_.+-]', self.textvertex.text):
-            self.status.text = 'используйте латиницу'
-            raise ValueError
+            for i in range(len(vertex_name)):
+                if self.textvertex.text == vertex_name[i]:
+                    it = i
+                    bl = False
+                    break
 
-        for i in range(len(vertex_name)):
-            if self.textvertex.text == vertex_name[i]:
-                it = i
-                bl = False
-                break
+            if bl:
+                self.status.text = 'такой вершины нет'
+                raise ValueError
 
-        if bl:
-            self.status.text = 'такой вершины нет'
-            raise ValueError
+            vertex_text[it] = self.textvertexdel.text
 
-        vertex_text[it] = self.textvertexdel.text
+            ver_tex = ','.join(vertex_text)
+            globals.stabilization()
+            XmlParser.change_text(globals.current_graph, ver_tex)
+            self.status.text = 'текст изменён'
+            globals.stabilization()
 
-        ver_tex = ','.join(vertex_text)
-        globals.stabilization()
-        XmlParser.change_text(globals.current_graph, ver_tex)
-        self.status.text = 'текст изменён'
-        globals.stabilization()
-
-    except ValueError:
-        pass
+        except ValueError:
+            pass
 
 
 def end_of_edge(j, number_of_vertex):
