@@ -11,6 +11,7 @@ from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
 from xml_parser import *
+from is_graph_planar import *
 
 Config.set('graphics', 'resizable', 0)
 Config.set('graphics', 'width', 1300)
@@ -73,6 +74,9 @@ Builder.load_string('''
     vecfirst:vecfirst
     vecsecond:vecsecond
     
+    textvertex:textvertex
+    textvertexdel:textvertexdel
+    
     FloatLayout:
      
         ItemTextInput: 
@@ -99,6 +103,7 @@ Builder.load_string('''
                 root.clear_matrix()
                 root.show_matrix()
                 root.radius_diameter()
+                root.planar()
         
         ItemButton:
             text: 'удалить граф'
@@ -107,6 +112,7 @@ Builder.load_string('''
             on_press:
                 root.del_info_graph()
                 root.del_graph()
+                root.clear_matrix()
         
         ItemButton:
             text: 'добавить граф'
@@ -172,7 +178,8 @@ Builder.load_string('''
             size_hint: .1, .05
             pos: 0, 110
             on_press:
-                root.planar()
+                root.make_it_planar()
+            
         
         BoxLayout:
             id:edges
@@ -267,6 +274,27 @@ Builder.load_string('''
                 id:delarc
                 hint_text:'имя дуги'
         
+        ItemButton:
+            text: 'изм.текст вершины'
+            size_hint: .1, .05
+            pos: 920, 400
+            on_press:
+                root.change_text()
+                root.del_info_graph()
+                root.update()
+                
+        ItemTextInput: 
+            id:textvertex
+            hint_text:'имя вершины'
+            size_hint: .1, .05
+            pos: 920, 350
+            
+        ItemTextInput: 
+            id:textvertexdel
+            hint_text:'текст'
+            size_hint: .15, .05
+            pos: 1050, 350
+        
         GridLayout:
             id: workvertex
             rows: 2
@@ -292,13 +320,13 @@ Builder.load_string('''
                     root.update()
             ItemTextInput:
                 id:addvertex
-                hint_text:'название вершины'
+                hint_text:'имя вершины'
             ItemTextInput:
                 id:color
                 hint_text:'цвет'
             ItemTextInput:
                 id:delvertex
-                hint_text:'название вершины'
+                hint_text:'имя вершины'
             
 ''')
 
@@ -315,6 +343,8 @@ class Table(Screen):
     info = []
     hamiltonian_cycle = []
     hamiltonian_cycle_del = []
+    result = None
+    bad_minor = None
 
     def change_graph(self):
         self.del_info_graph()
@@ -350,6 +380,9 @@ class Table(Screen):
             vertex_name = globals.vertex[globals.current_graph]
             vertex_name = vertex_name.split(sep=',')
 
+            vertex_text = globals.text[globals.current_graph]
+            vertex_text = vertex_text.split(sep=',')
+
             vertex_color = globals.color[globals.current_graph]
             vertex_color = vertex_color.split(sep=',')
 
@@ -371,7 +404,9 @@ class Table(Screen):
             if globals.vertex[globals.current_graph] != '':
                 for i in range(len(vertex_name)):
                     i_vertex += 1
-                    Table.vertex_list.append(Label(text=vertex_name[i_vertex] + '(' + vertex_color[i_vertex] + ')'))
+                    Table.vertex_list.append(
+                        Label(text=vertex_name[i_vertex] + '(' + vertex_color[i_vertex] + ')' + '(' + "text:{}".format(
+                            vertex_text[i]) + ')'))
                     self.nodes.add_widget(Table.vertex_list[i_vertex])
 
             i_vertex += 1
@@ -431,6 +466,9 @@ class Table(Screen):
             vertex_color = globals.color[globals.current_graph]
             vertex_color = vertex_color.split(sep=',')
 
+            vertex_text = globals.text[globals.current_graph]
+            vertex_text = vertex_text.split(sep=',')
+
             if self.addvertex.text == '':
                 self.status.text = 'введите имя вершины'
                 raise ValueError
@@ -454,8 +492,10 @@ class Table(Screen):
                 col_del = ','.join(vertex_color)
                 ver_del = ver_del + ',' + self.addvertex.text
                 col_del = col_del + ',' + self.color.text
+                ver_tex = ','.join(vertex_text)
+                ver_tex = ver_tex + ',' + ' '
                 globals.stabilization()
-                XmlParser.add_vertex(globals.current_graph, ver_del, col_del)
+                XmlParser.add_vertex(globals.current_graph, ver_del, col_del, ver_tex)
                 globals.stabilization()
                 self.status.text = 'вершина добавлена'
 
@@ -484,6 +524,9 @@ class Table(Screen):
             edges_name = globals.edges_name[globals.current_graph]
             edges_name = edges_name.split(sep=',')
 
+            vertex_text = globals.text[globals.current_graph]
+            vertex_text = vertex_text.split(sep=',')
+
             if self.delvertex.text == '':
                 self.status.text = 'введите имя вершины'
                 raise ValueError
@@ -504,6 +547,7 @@ class Table(Screen):
 
             del vertex_name[it]
             del vertex_color[it]
+            del vertex_text[it]
 
             i_del_ed = 0
             i_del_pt = 0
@@ -531,8 +575,9 @@ class Table(Screen):
             col_del = ','.join(vertex_color)
             ed_del = ','.join(edges_name)
             ed_pat_del = ','.join(edges_path)
+            ver_tex = ','.join(vertex_text)
             globals.stabilization()
-            XmlParser.add_vertex(globals.current_graph, ver_del, col_del)
+            XmlParser.add_vertex(globals.current_graph, ver_del, col_del, ver_tex)
             XmlParser.add_edges(globals.current_graph, ed_del, ed_pat_del)
             self.status.text = 'вершина удалена'
             globals.stabilization()
@@ -686,6 +731,10 @@ class Table(Screen):
                 type = 29
             elif it == 11:
                 type = 32
+            elif it == 12:
+                type = 35
+            elif it == 13:
+                type = 38
 
             del edges_path[type + 1]
             del edges_path[type + 1]
@@ -802,7 +851,7 @@ class Table(Screen):
             for i in range(len(Table.matrix_label)):
                 self.matrixx.remove_widget(Table.matrix_label[i])
             Table.matrix_label.clear()
-            for i in range(len(Table.info)):
+            for i in range(len(Table.info) + 1):
                 self.graphinfo.remove_widget(Table.info[i])
             Table.info.clear()
         except(IndexError):
@@ -900,6 +949,7 @@ class Table(Screen):
             color_new = []
             arc_new = []
             new_arc_path = []
+            text_new = []
 
             for i in range(len(globals.name)):
                 if self.decfirst.text == globals.name[i]:
@@ -945,6 +995,9 @@ class Table(Screen):
 
             for i in range(len(names_new)):
                 color_new.append('no color')
+
+            for i in range(len(names_new)):
+                text_new.append(' ')
 
             it = len(vertex_name_1) - len(vertex_name_1) * 2
 
@@ -1003,9 +1056,10 @@ class Table(Screen):
             ver_del = ','.join(names_new)
             col_del = ','.join(color_new)
             arc_del = ','.join(arc_new)
+            ver_tex = ','.join(text_new)
             path = ','.join(new_arc_path)
 
-            XmlParser.add_graph(name, col_del, ver_del, arc_del, path)
+            XmlParser.add_graph(name, col_del, ver_del, arc_del, path, ver_tex)
             globals.stabilization()
 
             self.status.text = 'создан граф {}'.format(name)
@@ -1022,6 +1076,7 @@ class Table(Screen):
             color_new = []
             arc_new = []
             new_arc_path = []
+            text_new = []
 
             for i in range(len(globals.name)):
                 if self.vecfirst.text == globals.name[i]:
@@ -1067,6 +1122,9 @@ class Table(Screen):
 
             for i in range(len(names_new)):
                 color_new.append('no color')
+
+            for i in range(len(names_new)):
+                text_new.append(' ')
 
             it = len(vertex_name_1) - len(vertex_name_1) * 2
 
@@ -1125,9 +1183,10 @@ class Table(Screen):
             ver_del = ','.join(names_new)
             col_del = ','.join(color_new)
             arc_del = ','.join(arc_new)
+            ver_tex = ','.join(text_new)
             path = ','.join(new_arc_path)
 
-            XmlParser.add_graph(name, col_del, ver_del, arc_del, path)
+            XmlParser.add_graph(name, col_del, ver_del, arc_del, path, ver_tex)
             globals.stabilization()
 
             self.status.text = 'создан граф {}'.format(name)
@@ -1145,73 +1204,101 @@ class Table(Screen):
                 self.status.text = 'найдите нужный граф'
                 raise ValueError
 
-            vertex_name = globals.vertex[globals.current_graph]
-            vertex_name = vertex_name.split(sep=',')
+            Table.result = None
+            Table.bad_minor = None
 
             edges_path = globals.edges_path[globals.current_graph]
             edges_path = edges_path.split(sep=',')
 
-            g = []
-            n = len(vertex_name)
-            used = []
+            G = nx.Graph()
+            for i in range(1, len(edges_path), 3):
+                G.add_edge(edges_path[i - 1], edges_path[i + 1])
 
-            for i in range(len(vertex_name)):
-                a = []
-                for k in range(1, len(edges_path), 3):
-                    if edges_path[k - 1] == vertex_name[i]:
-                        for j in range(len(vertex_name)):
-                            if edges_path[k + 1] == vertex_name[j]:
-                                a.append(j + 1)
-                    if edges_path[k + 1] == vertex_name[i]:
-                        for j in range(len(vertex_name)):
-                            if edges_path[k - 1] == vertex_name[j]:
-                                a.append(j + 1)
+            Table.result = is_planar(G)[0]
+            Table.bad_minor = is_planar(G)[1]
 
-                g.append(a)
+            i_i = len(Table.info)
+            Table.info.append(Label(text='Планарность графа: {}'.format(Table.result)))
+            self.graphinfo.add_widget(Table.info[i_i])
 
-            for i in range(len(g)):
-                a = []
-                for k in range(len(g[i])):
-                    a.append(False)
-                used.append(a)
-
-            print(g)
-            print(used)
-
-            bool = True
-
-            for i in range(0, n):
-                for j in range(0, len(g[i])):
-                    if not used[i][j]:
-                        used[i][j] = True
-                        v = g[i][j]
-                        print(v)
-                        globals.pv = i
-                        globals.face = 0
-
-                        while bool:
-                            for e in range(len(g[v])):
-                                if g[v][e] == globals.pv:
-                                    globals.it = e
-                                else:
-                                    globals.it = len(g[v]) - 1
-                                    print(globals.it)
-
-                            if globals.it + 1 == len(g[v])-1:
-                                globals.it = 0
-                            if used[v][globals.it - 0]:
-                                break
-                            used[v][globals.it - 0] = True
-                            globals.pv = v
-                            v = globals.it
-                            print(used)
-
-                globals.face += 1
-
-            print(globals.face)
+            print(Table.bad_minor)
+            nx.draw(G, with_labels=True)
+            plt.show()
 
         except ValueError:
             pass
+
+    def make_it_planar(self):
+        try:
+
+            if globals.current_graph == None:
+                self.status.text = 'найдите нужный граф'
+                raise ValueError
+
+            Table.result = None
+            Table.bad_minor = None
+
+            edges_path = globals.edges_path[globals.current_graph]
+            edges_path = edges_path.split(sep=',')
+
+            G = nx.Graph()
+            for i in range(1, len(edges_path), 3):
+                G.add_edge(edges_path[i - 1], edges_path[i + 1])
+
+            Table.result = is_planar(G)[0]
+            Table.bad_minor = is_planar(G)[1]
+
+            if is_planar(G)[0]:
+                self.status.text = 'граф и так планарный '
+                raise ValueError
+
+        except ValueError:
+            pass
+
+
+def change_text(self):
+    try:
+        if globals.current_graph == None:
+            self.status.text = 'найдите нужный граф'
+            raise ValueError
+
+        bl = True
+        it = None
+
+        vertex_name = globals.vertex[globals.current_graph]
+        vertex_name = vertex_name.split(sep=',')
+
+        vertex_text = globals.text[globals.current_graph]
+        vertex_text = vertex_text.split(sep=',')
+
+        if self.textvertex.text == '':
+            self.status.text = 'введите имя вершины'
+            raise ValueError
+
+        if re.search(r'[^a-zA-Z0-9_.+-]', self.textvertex.text):
+            self.status.text = 'используйте латиницу'
+            raise ValueError
+
+        for i in range(len(vertex_name)):
+            if self.textvertex.text == vertex_name[i]:
+                it = i
+                bl = False
+                break
+
+        if bl:
+            self.status.text = 'такой вершины нет'
+            raise ValueError
+
+        vertex_text[it] = self.textvertexdel.text
+
+        ver_tex = ','.join(vertex_text)
+        globals.stabilization()
+        XmlParser.change_text(globals.current_graph, ver_tex)
+        self.status.text = 'текст изменён'
+        globals.stabilization()
+
+    except ValueError:
+        pass
 
 
 def end_of_edge(j, number_of_vertex):

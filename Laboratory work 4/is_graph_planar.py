@@ -26,25 +26,24 @@ def is_planar(G):
             if len(subG.edges()) == 10:  # check if the graph G has a subgraph K(5)
                 result = False
                 bad_minor = subnodes
-    print(result)
-    print(bad_minor)
     return result, bad_minor
 
 
-# create random planar graph with n nodes and p probability of growing
-n = 8
-p = 0.6
-G = nx.Graph()
-elist = [('node1', 'node2', 1.0), ('node1', 'node3', 1.0), ('node3', 'node2', 1.0), ('node2', 'node5', 1.0),
-         ('node3', 'node5', 1.0), ('node3', 'node4', 1.0), ('node4', 'node5', 1.0)]
-G.add_weighted_edges_from(elist)
+if __name__ == "__main__":
+    # create random planar graph with n nodes and p probability of growing
+    n = 8
+    p = 0.6
+    G = nx.Graph()
+    elist = [('node1', 'node2', 1.0), ('node1', 'node3', 1.0), ('node3', 'node2', 1.0), ('node2', 'node5', 1.0),
+             ('node3', 'node5', 1.0), ('node3', 'node4', 1.0), ('node4', 'node5', 1.0)]
+    G.add_weighted_edges_from(elist)
 
-if is_planar(G)[0]:
-    pass
+    if is_planar(G)[0]:
+        pass
 
-# comment the line above and uncomment one of the 3 lines below (try each of them):
-# nx.draw_random(G)
-# nx.draw_circular(G)
-# nx.draw_spectral(G)
-nx.draw_planar(G, with_labels=True)
-plt.show()
+    # comment the line above and uncomment one of the 3 lines below (try each of them):
+    # nx.draw_random(G)
+    # nx.draw_circular(G)
+    # nx.draw_spectral(G)
+    nx.draw_planar(G, with_labels=True)
+    plt.show()

@@ -9,6 +9,7 @@ class Globals:
 
     def __init__(self):
         self.name = XmlParser.find_names(root)
+        self.text = XmlParser.find_text(root)
         self.color = XmlParser.find_color(root)
         self.vertex = XmlParser.find_vertex(root)
         self.edges_name = XmlParser.find_edges_name(root)
@@ -27,13 +28,10 @@ class Globals:
         self.g_it = -1
         self.arc = 0
 
-        self.pv = None
-        self.face = None
-        self.it = None
-
     def stabilization(self):
         self.name = XmlParser.find_names(root)
         self.color = XmlParser.find_color(root)
+        self.text = XmlParser.find_text(root)
         self.vertex = XmlParser.find_vertex(root)
         self.edges_name = XmlParser.find_edges_name(root)
         self.edges_path = XmlParser.find_edges_path(root)
@@ -58,6 +56,13 @@ class XmlParser:
         for elem in root.findall('graph'):
             names.append(elem.get('name_graph'))
         return names
+
+    @staticmethod
+    def find_text(root):
+        text = []
+        for elem in root.findall('graph'):
+            text.append(elem.get('text'))
+        return text
 
     @staticmethod
     def find_color(root):
@@ -89,13 +94,14 @@ class XmlParser:
 
     @staticmethod
     def add_graph(name, color='no color,no color', vertex='node1,node2', edges_name='edge1',
-                  edges_path='node1,=>,node2'):
+                  edges_path='node1,=>,node2', text=' , '):
         global file
         global root
         global tree
         data = ET.Element('graphs')
         item = ET.SubElement(data, 'graph')
         item.set('name_graph', name)
+        item.set('text', text)
         item.set('color', color)
         item.set('vertex', vertex)
         item.set('edges_name', edges_name)
@@ -110,13 +116,19 @@ class XmlParser:
         tree.write(file)
 
     @staticmethod
-    def add_vertex(current_graph, vertex, color):
+    def add_vertex(current_graph, vertex, color, text):
         root[current_graph].set('vertex', vertex)
         root[current_graph].set('color', color)
+        root[current_graph].set('text', text)
         tree.write(file)  # перезапись
 
     @staticmethod
     def add_edges(current_graph, edges, edges_path):
         root[current_graph].set('edges_name', edges)
         root[current_graph].set('edges_path', edges_path)
+        tree.write(file)  # перезапись
+
+    @staticmethod
+    def change_text(current_graph, text):
+        root[current_graph].set('text', text)
         tree.write(file)  # перезапись
