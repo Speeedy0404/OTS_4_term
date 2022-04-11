@@ -815,6 +815,7 @@ class Table(Screen):
                         else:
                             Table.matrix[i][col] = 0
 
+            print('matrix of graph')
             print(Table.matrix)
 
         except ValueError:
@@ -854,7 +855,7 @@ class Table(Screen):
             for i in range(len(Table.matrix_label)):
                 self.matrixx.remove_widget(Table.matrix_label[i])
             Table.matrix_label.clear()
-            for i in range(len(Table.info) + 1):
+            for i in range(len(Table.info)):
                 self.graphinfo.remove_widget(Table.info[i])
             Table.info.clear()
         except(IndexError):
@@ -865,19 +866,17 @@ class Table(Screen):
             if globals.current_graph == None:
                 self.status.text = 'найдите нужный граф'
                 raise ValueError
-            Table.info.clear()
+
             edges_name = globals.edges_name[globals.current_graph]
             edges_name = edges_name.split(sep=',')
-            print('this is edges')
+
             vertex_name = globals.vertex[globals.current_graph]
             vertex_name = vertex_name.split(sep=',')
 
-            print('this is vertex')
-            print(vertex_name)
 
             globals.Columns = len(edges_name)
             globals.Lines = len(vertex_name)
-            print(globals.Lines)
+
 
             diameter = 0
             radius = 100
@@ -938,6 +937,7 @@ class Table(Screen):
                 Table.info.append(Label(text='гамильтов цикл: {}'.format(Table.hamiltonian_cycle)))
                 self.graphinfo.add_widget(Table.info[i_i])
 
+            print('this is hamilton cycle')
             print(Table.hamiltonian_cycle)
 
             del Table.eccentricity
@@ -1228,6 +1228,7 @@ class Table(Screen):
             Table.info.append(Label(text='Планарность графа: {}'.format(Table.result)))
             self.graphinfo.add_widget(Table.info[i_i])
 
+            print('проблемы планарности')
             print(Table.bad_minor)
             nx.draw(G, with_labels=True)
             plt.show()
