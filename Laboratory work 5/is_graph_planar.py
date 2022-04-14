@@ -47,3 +47,4 @@ if __name__ == "__main__":
     # nx.draw_spectral(G)
     nx.draw_planar(G, with_labels=True)
     plt.show()
+

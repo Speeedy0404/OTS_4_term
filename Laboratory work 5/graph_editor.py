@@ -738,6 +738,22 @@ class Table(Screen):
                 type = 35
             elif it == 13:
                 type = 38
+            elif it == 14:
+                type = 41
+            elif it == 15:
+                type = 44
+            elif it == 16:
+                type = 47
+            elif it == 17:
+                type = 50
+            elif it == 18:
+                type = 53
+            elif it == 19:
+                type = 56
+            elif it == 20:
+                type = 59
+            elif it == 21:
+                type = 62
 
             del edges_path[type + 1]
             del edges_path[type + 1]
@@ -1273,7 +1289,7 @@ class Table(Screen):
                 raise ValueError
 
             for i in range(len(vertex_name)):
-                if Table.bad_minor[0] == vertex_name[i]:
+                if Table.bad_minor[1] == vertex_name[i]:
                     self.delvertex.text = vertex_name[i]
                     self.del_vertex()
                     break
